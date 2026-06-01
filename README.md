@@ -1,330 +1,306 @@
 # SymFonos
 
-> *Sound becomes chaos. Chaos becomes color. Color becomes music.*
+> *El sonido se vuelve caos. El caos se vuelve color. El color se vuelve música.*
 
-**SymFonos** is a generative musical visualizer that turns live audio into real-time chaotic physics simulations rendered in WebGL. Feed it your microphone or an audio file — it responds with kinetic sculpture driven by Spring Pendulums and Double Pendulums solved frame-by-frame using Runge-Kutta 4.
-
----
-
-## Table of Contents
-
-1. [Artistic Concept](#artistic-concept)
-2. [Architecture Overview](#architecture-overview)
-3. [Physics Engine](#physics-engine)
-4. [Audio Engine](#audio-engine)
-5. [Visual System](#visual-system)
-6. [Installation](#installation)
-7. [Running Locally](#running-locally)
-8. [Deploying to Vercel](#deploying-to-vercel)
-9. [Keyboard Shortcuts](#keyboard-shortcuts)
-10. [Configuration & Presets](#configuration--presets)
-11. [Project Structure](#project-structure)
-12. [Credits & References](#credits--references)
+**SymFonos** es un visualizador musical generativo que convierte audio en vivo en simulaciones de física caótica renderizadas en WebGL. Conecta tu micrófono o sube un archivo de audio, y el sistema responde con esculturas cinéticas impulsadas por péndulos de resorte y péndulos dobles, resueltos fotograma a fotograma mediante el método Runge-Kutta 4 y efectos de color, movimiento y forma conforme evoluciona el ritmo.
 
 ---
 
-## Artistic Concept
+## Tabla de Contenidos
 
-SymFonos sits at the intersection of four artistic traditions:
-
-**Wassily Kandinsky** established that color, shape, and sound are unified perceptual languages. His *Komposition* series (1910–1940) mapped musical tonality to visual form. SymFonos operationalizes this: bass frequencies produce warm hues, treble produces cool, and amplitude controls luminance — all encoded in the perceptually uniform **LCH color space** so that equal numeric distances produce equal perceptual distances.
-
-**Massimo Vignelli** argued that design must be reduced to its irreducible structure. The *Vignelli Grid* preset strips the visualization to primary geometries and exact typographic proportion, treating chaos as a grid that has forgotten its origins.
-
-**Saul Bass** built tension from motion — his title sequences for *Vertigo* and *Anatomy of a Murder* made graphic form kinetic. The spiral arms and trail decay in SymFonos borrow his sense of rotational dread.
-
-**John Maeda** (*The Laws of Simplicity*, 2006) argued that computational art earns its complexity only when it reveals underlying order. Chaos theory does exactly this: the Double Pendulum is deterministic but unpredictable; its Lyapunov exponent makes prediction exponentially expensive. SymFonos makes the exponential visible.
+1. [Concepto Artístico](#concepto-artístico)
+2. [Visión General de la Arquitectura](#visión-general-de-la-arquitectura)
+3. [Motor de Física](#motor-de-física)
+4. [Motor de Audio](#motor-de-audio)
+5. [Sistema Visual](#sistema-visual)
+6. [Instalación](#instalación)
+7. [Ejecución Local](#ejecución-local)
+8. [Despliegue en Vercel](#despliegue-en-vercel)
+9. [Atajos de Teclado](#atajos-de-teclado)
+10. [Configuración y Presets](#configuración-y-presets)
+11. [Estructura del Proyecto](#estructura-del-proyecto)
+12. [Créditos y Referencias](#créditos-y-referencias)
 
 ---
 
-## Architecture Overview
+## Concepto Artístico
 
-```
-┌─────────────────────────────────────────────────────┐
-│                    page.tsx (orchestrator)           │
-│  ┌──────────────┐  ┌─────────────┐  ┌────────────┐  │
-│  │ useAudioEngine│  │usePhysicsWk │  │useFPSAdapt │  │
-│  │  (Web Audio) │  │  (Worker)   │  │  (quality) │  │
-│  └──────┬───────┘  └──────┬──────┘  └─────┬──────┘  │
-│         │ AudioMetrics     │ FrameData      │ mult.   │
-│         └──────────────────▼───────────────▼─────    │
-│                    PhysicsCanvas.tsx                  │
-│                  ┌──────────────────┐                │
-│                  │   Three.js Scene │                │
-│                  │  Background Quad │                │
-│                  │  Spring/DP mesh  │                │
-│                  │  Particle system │                │
-│                  │  EffectComposer  │                │
-│                  │    RenderPass    │                │
-│                  │  UnrealBloom     │                │
-│                  │  ChromaticAber.  │                │
-│                  │   OutputPass     │                │
-│                  └──────────────────┘                │
-└─────────────────────────────────────────────────────┘
+SymFonos se sitúa en la intersección de cuatro tradiciones artísticas, integrando también los principios de movimiento y percepción cromática de los maestros del diseño:
+
+**Wassily Kandinsky** postuló que color, forma y sonido conforman un lenguaje perceptual unificado. Su serie *Komposition* (1910–1940) mapeaba la tonalidad musical a la forma visual. SymFonos operacionaliza esta idea: las frecuencias graves producen tonos cálidos, las agudas generan tonos fríos, y la amplitud controla la luminancia — todo ello codificado en el espacio de color perceptual uniforme **LCH** (Luminosidad, Croma, Matiz), donde distancias numéricas iguales producen diferencias perceptuales iguales, evitando los artefactos del espacio RGB.
+
+**Massimo Vignelli** defendía que el diseño debe reducirse a su estructura irreducible. El preset *Vignelli Grid* reduce la visualización a geometrías primarias y una proporción tipográfica exacta, tratando al caos como una cuadrícula que ha olvidado sus orígenes. Su obsesión por la retícula y las formas atemporales garantiza una base estructural robusta.
+
+**Saul Bass** construía tensión a partir del movimiento — sus secuencias de títulos para *Vértigo* y *Anatomía de un asesinato* convirtieron la forma gráfica en cinética. Los brazos en espiral y la estela decadente en SymFonos toman prestada su sensación de vértigo rotacional.
+
+**John Maeda** (*Las leyes de la simplicidad*, 2006) argumentaba que el arte computacional solo gana su complejidad cuando revela un orden subyacente. La teoría del caos hace exactamente esto: el péndulo doble es determinista pero impredecible; su exponente de Lyapunov hace que la predicción sea exponencialmente costosa. SymFonos hace visible lo exponencial.
+
+Además, el proyecto bebe del **Constructivismo Ruso** y **De Stijl** (abstracción geométrica), del **Arte Cinético** (el movimiento como elemento) y del **Expresionismo Abstracto** (emoción pura), permitiendo que cada preset navegue entre la estructura analítica y la espontaneidad orgánica.
+
+---
+
+## Visión General de la Arquitectura
+┌──────────────────────────────────────────────────────────┐
+│ page.tsx (orquestador) │
+│ ┌──────────────┐ ┌─────────────┐ ┌────────────────┐ │
+│ │ useAudioEngine│ │usePhysicsWk │ │ useFPSAdaptive │ │
+│ │ (Web Audio) │ │ (Worker) │ │ (calidad) │ │
+│ └──────┬───────┘ └──────┬──────┘ └───────┬────────┘ │
+│ │ AudioMetrics │ FrameData │ factor │
+│ └──────────────────▼─────────────────▼──────── │
+│ PhysicsCanvas.tsx │
+│ ┌──────────────────────┐ │
+│ │ Escena Three.js │ │
+│ │ Quad de fondo │ │
+│ │ Malla péndulos │ │
+│ │ Sistema partículas │ │
+│ │ EffectComposer │ │
+│ │ RenderPass │ │
+│ │ UnrealBloom │ │
+│ │ Aberración cromática │ │
+│ │ OutputPass │ │
+│ └──────────────────────┘ │
+└──────────────────────────────────────────────────────────┘
 
 Web Worker (physicsWorker.ts)
-  ├── Spring Pendulum RK4 (springPendulum.ts)
-  └── Double Pendulum RK4 (doublePendulum.ts)
-```
+├── Péndulo de resorte RK4 (springPendulum.ts)
+└── Péndulo doble RK4 (doublePendulum.ts)
 
-**Data flow:**
+text
 
-1. `useAudioEngine` captures microphone / audio file via Web Audio API, produces `AudioMetrics` (RMS, dominant frequency, beat flag, bass energy) at 60 fps.
-2. `usePhysicsWorker` sends `SET_FORCE` to the Web Worker each frame; the Worker advances the ODE with 1 ms RK4 sub-steps and posts back the state vector.
-3. `page.tsx` assembles a `FrameData` object and calls `pushFrame()` into `PhysicsCanvas`.
-4. `PhysicsCanvas` updates Three.js uniforms, advances particles, runs the EffectComposer pipeline, and renders.
+**Flujo de datos:**
 
----
-
-## Physics Engine
-
-### Spring Pendulum
-
-State vector: `[x, θ₁, θ₂, ẋ, θ̇₁, θ̇₂]`
-
-A cart of mass **M** slides on a frictionless rail. Two pendulums of mass **m1/m2** and length **L1/L2** hang from the cart, connected by spring constant **k**. The system is Lagrangian; the equations of motion reduce to a 3×3 linear system solved by Gaussian elimination at each sub-step.
-
-External force `F_ext = rms × sensitivity × 30` drives the cart from audio amplitude.
-
-### Double Pendulum
-
-State vector: `[θ₁, θ₂, ω₁, ω₂]`
-
-Two point masses connected by rigid rods of length **l1/l2**. The equations yield a 2×2 linear system solved by Cramér's rule. Initialized at `θ₁ = π/2, θ₂ = π/3` for immediate chaotic onset.
-
-The Lyapunov exponent of this system is positive — nearby initial conditions diverge exponentially. Audio drives a torque impulse `τ = rms × sensitivity × 30` on the upper rod.
-
-### Numerical Integration
-
-Both systems use **Runge-Kutta 4th order** with:
-- Fixed sub-step `DT = 0.001 s` (1 ms)
-- Wall-clock cap `MAX_STEP = 0.05 s` per frame (prevents spiral on tab focus)
-- Runs in a **Web Worker** via `setInterval` at 60 fps (RAF unavailable in workers)
+1. `useAudioEngine` captura el micrófono o archivo de audio a través de la Web Audio API y produce `AudioMetrics` (RMS, frecuencia dominante, detección de beat, energía de graves) a 60 fps.
+2. `usePhysicsWorker` envía `SET_FORCE` al Web Worker en cada fotograma; el Worker avanza la ODE con sub-pasos RK4 de 1 ms y devuelve el vector de estado.
+3. `page.tsx` ensambla un objeto `FrameData` y llama a `pushFrame()` en `PhysicsCanvas`.
+4. `PhysicsCanvas` actualiza los uniforms de Three.js, avanza las partículas, ejecuta el pipeline de EffectComposer y renderiza.
 
 ---
 
-## Audio Engine
+## Motor de Física
 
-`useAudioEngine` wraps the Web Audio API:
+### Péndulo de Resorte
 
-| Signal | Method |
+Vector de estado: `[x, θ₁, θ₂, ẋ, θ̇₁, θ̇₂]`
+
+Un carro de masa **M** se desliza sobre un riel sin fricción. Dos péndulos de masa **m1/m2** y longitud **L1/L2** cuelgan del carro, conectados por una constante de resorte **k**. El sistema es lagrangiano; las ecuaciones de movimiento se reducen a un sistema lineal de 3×3 que se resuelve por eliminación gaussiana en cada sub-paso.
+
+La fuerza externa `F_ext = rms × sensibilidad × 30` impulsa el carro a partir de la amplitud del audio.
+
+### Péndulo Doble
+
+Vector de estado: `[θ₁, θ₂, ω₁, ω₂]`
+
+Dos masas puntuales conectadas por varillas rígidas de longitud **l1/l2**. Las ecuaciones producen un sistema lineal de 2×2 resuelto mediante la regla de Cramer. Se inicializa con `θ₁ = π/2, θ₂ = π/3` para un inicio inmediato del caos.
+
+El exponente de Lyapunov de este sistema es positivo: condiciones iniciales cercanas divergen exponencialmente. El audio aplica un impulso de torque `τ = rms × sensibilidad × 30` sobre la varilla superior.
+
+### Integración Numérica
+
+Ambos sistemas utilizan **Runge-Kutta de cuarto orden** con:
+- Sub-paso fijo `DT = 0.001 s` (1 ms)
+- Límite por tiempo real `MAX_STEP = 0.05 s` por fotograma (evita espirales al recuperar el foco de la pestaña)
+- Ejecución en un **Web Worker** mediante `setInterval` a 60 fps (pues `requestAnimationFrame` no está disponible en workers)
+
+---
+
+## Motor de Audio
+
+`useAudioEngine` envuelve la Web Audio API:
+
+| Señal | Método |
 |---|---|
-| **RMS** | Square root of mean-squared samples from `AnalyserNode` |
-| **Dominant frequency** | Peak bin of FFT magnitude spectrum (2048-point, Blackman window) |
-| **Beat detection** | Bass energy (20–250 Hz) vs. 43-frame rolling average; threshold ×1.4, 200 ms cooldown |
-| **Frequency normalization** | Log₁₀ scale: 20 Hz → 0.0, 20 kHz → 1.0 |
+| **RMS** | Raíz cuadrada de la media cuadrática de las muestras del `AnalyserNode` |
+| **Frecuencia dominante** | Bin de mayor magnitud del espectro FFT (2048 puntos, ventana Blackman) |
+| **Detección de beat** | Energía en graves (20–250 Hz) vs. media móvil de 43 frames; umbral ×1.4, enfriamiento de 200 ms |
+| **Normalización de frecuencia** | Escala log₁₀: 20 Hz → 0.0, 20 kHz → 1.0 |
 
-Sources: browser microphone (`getUserMedia`) or uploaded audio file (`MediaElementSource`).
+Fuentes: micrófono del navegador (`getUserMedia`) o archivo de audio subido (`MediaElementSource`).
 
 ---
 
-## Visual System
+## Sistema Visual
 
-### LCH Color Space
+### Espacio de Color LCH
 
-All color computation happens in **LCH (Lightness, Chroma, Hue)** — a perceptually uniform space derived from CIELAB. The GLSL background shader implements the full pipeline inline: LCH → Lab → XYZ → linear sRGB → gamma-encoded sRGB.
+Todo el cálculo de color se realiza en **LCH (Luminosidad, Croma, Matiz)** — un espacio perceptual uniforme derivado del CIELAB. El shader de fondo GLSL implementa toda la pipeline en línea: LCH → Lab → XYZ → sRGB lineal → sRGB con gamma.
 
-Perceptual benefit: a ΔE of 10 in LCH looks equally different regardless of hue. This means frequency sweeps produce smooth, visually consistent color transitions without the muddy midpoints that plague HSL interpolation.
+Beneficio perceptual: un ΔE de 10 en LCH se ve igual de diferente independientemente del matiz. Esto significa que los barridos de frecuencia producen transiciones de color suaves y visualmente consistentes, sin los puntos medios turbios que plagan la interpolación HSL.
 
-Frequency → Hue mapping (log scale):
-- 20 Hz → 0° (red)
-- 1 kHz → ~150° (green-cyan)
-- 20 kHz → 300° (violet)
+Mapeo de frecuencia → Matiz (escala log):
+- 20 Hz → 0° (rojo)
+- 1 kHz → ~150° (verde-cyan)
+- 20 kHz → 300° (violeta)
 
-### Shader Pipeline
+### Pipeline de Shaders
+RenderPass → UnrealBloomPass → ShaderPass(aberracionCromatica) → OutputPass
 
-```
-RenderPass → UnrealBloomPass → ShaderPass(chromaticAberration) → OutputPass
-```
+text
 
-**Background shader** (`backgroundShader.ts`): Clip-space quad (`gl_Position = vec4(position.xy, 1.0, 1.0)`) that renders a radial LCH gradient with procedural noise grain, vignette, and beat flash. Runs at full resolution independently of camera.
+**Shader de fondo** (`backgroundShader.ts`): Quad en espacio de clip (`gl_Position = vec4(position.xy, 1.0, 1.0)`) que renderiza un gradiente radial LCH con ruido procesal, viñeteado y flash de beat. Se ejecuta a resolución completa independientemente de la cámara.
 
-**Mass shader** (`massShader.ts`): `ShaderMaterial` on pendulum bob meshes. Vertex stage applies radial pulse on beat (`sin(uTime * 30) * uBeat * 0.18`) and wave deformation from RMS. Fragment stage adds Fresnel rim lighting.
+**Shader de masas** (`massShader.ts`): `ShaderMaterial` en las mallas de las masas del péndulo. La etapa de vértices aplica un pulso radial en el beat (`sin(uTime * 30) * uBeat * 0.18`) y una deformación ondulatoria a partir del RMS. La etapa de fragmentos añade iluminación de borde tipo Fresnel.
 
-**Chromatic aberration** (`chromaticShader.ts`): `ShaderPass` that splits R and B channels by `±0.012 * uIntensity` in a slowly-rotating UV direction. Triggered on beat, decays over ~14 frames.
+**Aberración cromática** (`chromaticShader.ts`): `ShaderPass` que separa los canales R y B en `±0.012 * uIntensity` en una dirección UV que rota lentamente. Se activa en el beat y decae en unos 14 fotogramas.
 
 ### Presets
 
-| Preset | Palette | Bloom | Particles | Glitch |
+| Preset | Paleta | Bloom | Partículas | Glitch |
 |---|---|---|---|---|
-| **Kandinsky Pulse** | Warm orange / violet | 1.8 | 800 | On beat |
-| **Vignelli Grid** | Primary red/blue/yellow | 0.6 | 200 | Off |
-| **Neon Filament** | Cyan / magenta | 2.2 | 600 | On beat |
-| **Particle Swarm** | Green / orange | 1.5 | 1200 | Subtle |
+| **Kandinsky Pulse** | Naranja / violeta cálidos | 1.8 | 800 | En beat |
+| **Vignelli Grid** | Rojo/azul/amarillo primarios | 0.6 | 200 | Off |
+| **Neon Filament** | Cyan / magenta | 2.2 | 600 | En beat |
+| **Particle Swarm** | Verde / naranja | 1.5 | 1200 | Sutil |
 
-### FPS-Adaptive Quality
+### Calidad Adaptativa por FPS
 
-`useFPSAdaptive` measures a 90-frame rolling window:
+`useFPSAdaptive` mide una ventana móvil de 90 fotogramas:
 
-| FPS | Quality | Particle multiplier |
+| FPS | Calidad | Multiplicador de partículas |
 |---|---|---|
-| ≥ 50 | High | 1.0× |
-| 35–49 | Medium | 0.5× |
-| < 35 | Low | 0.15× |
+| ≥ 50 | Alta | 1.0× |
+| 35–49 | Media | 0.5× |
+| < 35 | Baja | 0.15× |
 
 ---
 
-## Installation
+## Instalación
 
-**Prerequisites:** Node.js 20+, npm 10+
+**Requisitos previos:** Node.js 20+, npm 10+
 
 ```bash
 git clone https://github.com/youruser/symfonos.git
 cd symfonos
 npm install
-```
+Dependencias principales (en package.json):
 
-Key dependencies (in `package.json`):
-- `three@^0.177.0` + `@types/three@^0.177.0`
-- `zustand@^5.0.0`
-- `next@^16.x` (App Router)
+three@^0.177.0 + @types/three@^0.177.0
 
----
+zustand@^5.0.0
 
-## Running Locally
+next@^16.x (App Router)
 
-```bash
+Ejecución Local
+bash
 npm run dev
-```
+Abre http://localhost:3000
 
-Open [http://localhost:3000](http://localhost:3000).
+Acceso al micrófono: El navegador solicitará permiso. Concédelo y haz clic en MIC para comenzar. El procesamiento de audio usa AudioContext — algunos navegadores requieren un gesto del usuario (clic) para iniciar el contexto.
 
-> **Microphone access:** The browser will request microphone permission. Grant it and click **MIC** to start. Audio processing uses `AudioContext` — some browsers require a user gesture before the context can start.
+Cabeceras COOP/COEP: next.config.ts establece Cross-Origin-Opener-Policy: same-origin y Cross-Origin-Embedder-Policy: require-corp. Esto puede afectar la carga de archivos de audio de origen cruzado; prefiere archivos del mismo origen o usa la entrada de micrófono.
 
-> **COOP/COEP headers:** `next.config.ts` sets `Cross-Origin-Opener-Policy: same-origin` and `Cross-Origin-Embedder-Policy: require-corp`. This may affect loading cross-origin audio files; prefer same-origin files or use the mic input.
-
-### Production build
-
-```bash
+Build de producción
+bash
 npm run build
 npm start
-```
+Despliegue en Vercel
+El repositorio incluye vercel.json con las cabeceras de seguridad COOP/COEP necesarias. Haz push a GitHub e impórtalo en Vercel — no se necesita configuración adicional.
 
----
-
-## Deploying to Vercel
-
-The repo includes `vercel.json` with the required COOP/COEP security headers. Push to GitHub and import into Vercel — no additional configuration needed.
-
-```bash
-# One-time CLI setup
+bash
+# Configuración CLI única
 npm i -g vercel
 
-# Deploy to production
+# Desplegar a producción
 vercel --prod
-```
+Vercel detecta Next.js automáticamente y aplica las sobreescrituras de cabeceras de vercel.json, asegurando que los Web Workers funcionen correctamente en el entorno desplegado.
 
-Vercel detects Next.js automatically and applies the `vercel.json` header overrides, ensuring Web Workers function correctly in the deployed environment.
+Atajos de Teclado
+Tecla	Acción
+Espacio	Iniciar / detener micrófono
+E	Cambiar ecuación (Resorte ↔ Péndulo doble)
+P	Siguiente preset visual
+L	Mostrar/ocultar panel de control
+F	Pantalla completa
+M	Modo monocromo de alto contraste (accesibilidad)
+R	Reiniciar estado físico
+Configuración y Presets
+Todo el estado global vive en el store de Zustand (src/store/symfonos.ts). Los parámetros físicos se ajustan mediante el panel colapsable (tecla L o botón de alternancia).
 
----
-
-## Keyboard Shortcuts
-
-| Key | Action |
-|---|---|
-| `Space` | Start / stop microphone |
-| `E` | Switch equation (Spring ↔ Double Pendulum) |
-| `P` | Cycle to next preset |
-| `L` | Toggle control panel |
-| `F` | Toggle fullscreen |
-| `M` | Toggle monochrome accessibility mode |
-| `R` | Reset physics state |
-
----
-
-## Configuration & Presets
-
-All state lives in the **Zustand store** (`src/store/symfonos.ts`). Physics parameters are adjusted via the collapsible control panel (keyboard `L` or panel toggle button).
-
-### Spring Pendulum parameters
-
-| Param | Default | Range | Description |
-|---|---|---|---|
-| M | 2.0 | 0.5–5.0 | Cart mass (kg) |
-| m1 | 0.5 | 0.1–2.0 | Bob 1 mass (kg) |
-| m2 | 0.3 | 0.1–2.0 | Bob 2 mass (kg) |
-| L1 | 1.2 | 0.3–3.0 | Rod 1 length (m) |
-| L2 | 0.8 | 0.3–3.0 | Rod 2 length (m) |
-| k | 8.0 | 1–30 | Spring constant (N/m) |
-| damping | 0.05 | 0–0.5 | Viscous damping |
-
-### Double Pendulum parameters
-
-| Param | Default | Range |
-|---|---|---|
-| m1 | 1.0 | 0.1–3.0 |
-| m2 | 1.0 | 0.1–3.0 |
-| l1 | 1.5 | 0.3–3.0 |
-| l2 | 1.5 | 0.3–3.0 |
-| damping | 0.02 | 0–0.3 |
-
----
-
-## Project Structure
-
-```
+Parámetros del Péndulo de Resorte
+Parámetro	Valor por defecto	Rango	Descripción
+M	2.0	0.5–5.0	Masa del carro (kg)
+m1	0.5	0.1–2.0	Masa de la primera lenteja (kg)
+m2	0.3	0.1–2.0	Masa de la segunda lenteja (kg)
+L1	1.2	0.3–3.0	Longitud de la primera varilla (m)
+L2	0.8	0.3–3.0	Longitud de la segunda varilla (m)
+k	8.0	1–30	Constante del resorte (N/m)
+damping	0.05	0–0.5	Amortiguamiento viscoso
+Parámetros del Péndulo Doble
+Parámetro	Valor por defecto	Rango
+m1	1.0	0.1–3.0
+m2	1.0	0.1–3.0
+l1	1.5	0.3–3.0
+l2	1.5	0.3–3.0
+damping	0.02	0–0.3
+Estructura del Proyecto
+text
 symfonos/
 ├── src/
 │   ├── app/
-│   │   ├── layout.tsx          # Root layout, Inter font
-│   │   ├── page.tsx            # Main orchestrator
-│   │   └── globals.css         # CSS variables, neon utilities
+│   │   ├── layout.tsx          # Layout raíz, fuente Inter
+│   │   ├── page.tsx            # Orquestador principal
+│   │   └── globals.css         # Variables CSS, utilidades neon
 │   ├── components/
-│   │   ├── PhysicsCanvas.tsx   # Three.js scene + EffectComposer
-│   │   ├── ControlPanel.tsx    # Collapsible parameter sliders
-│   │   ├── AudioControls.tsx   # Mic/file UI + level meter
-│   │   ├── WaveformDisplay.tsx # Canvas 2D waveform
-│   │   ├── RecordButton.tsx    # MediaRecorder → .webm download
-│   │   └── TutorialOverlay.tsx # 5-step first-time tutorial
+│   │   ├── PhysicsCanvas.tsx   # Escena Three.js + EffectComposer
+│   │   ├── ControlPanel.tsx    # Sliders de parámetros colapsables
+│   │   ├── AudioControls.tsx   # UI micrófono/archivo + medidor de nivel
+│   │   ├── WaveformDisplay.tsx # Forma de onda con Canvas 2D
+│   │   ├── RecordButton.tsx    # MediaRecorder → descarga .webm
+│   │   └── TutorialOverlay.tsx # Tutorial inicial de 5 pasos
 │   ├── hooks/
-│   │   ├── useAudioEngine.ts   # Web Audio API wrapper
-│   │   ├── usePhysicsWorker.ts # Worker communication
-│   │   ├── useFullscreen.ts    # Fullscreen API (webkit compat)
-│   │   └── useFPSAdaptive.ts   # Quality scaling by FPS
+│   │   ├── useAudioEngine.ts   # Wrapper de Web Audio API
+│   │   ├── usePhysicsWorker.ts # Comunicación con el Worker
+│   │   ├── useFullscreen.ts    # API Fullscreen (compatibilidad webkit)
+│   │   └── useFPSAdaptive.ts   # Escalado de calidad por FPS
 │   ├── lib/
 │   │   ├── physics/
-│   │   │   ├── springPendulum.ts   # RK4 + Lagrangian equations
-│   │   │   └── doublePendulum.ts   # RK4 + Cramér's rule
+│   │   │   ├── springPendulum.ts   # RK4 + ecuaciones lagrangianas
+│   │   │   └── doublePendulum.ts   # RK4 + regla de Cramer
 │   │   ├── shaders/
-│   │   │   ├── backgroundShader.ts # LCH gradient + FX
-│   │   │   ├── massShader.ts       # Fresnel + pulse deform
-│   │   │   └── chromaticShader.ts  # Chromatic aberration pass
-│   │   ├── presets.ts          # 4 visual preset definitions
+│   │   │   ├── backgroundShader.ts # Gradiente LCH + FX
+│   │   │   ├── massShader.ts       # Fresnel + deformación por pulso
+│   │   │   └── chromaticShader.ts  # Paso de aberración cromática
+│   │   ├── presets.ts          # 4 definiciones de presets visuales
 │   │   └── colorSystem.ts      # LCH↔RGB, freqToHue(), reactiveColor()
 │   ├── store/
-│   │   └── symfonos.ts         # Zustand global store
+│   │   └── symfonos.ts         # Store global de Zustand
 │   └── workers/
-│       └── physicsWorker.ts    # Unified Spring + Double Pendulum worker
-├── vercel.json                 # COOP/COEP headers for Vercel
-├── next.config.ts              # transpilePackages, security headers
+│       └── physicsWorker.ts    # Worker unificado (Resorte + Doble)
+├── vercel.json                 # Cabeceras COOP/COEP para Vercel
+├── next.config.ts              # transpilePackages, cabeceras de seguridad
 └── package.json
-```
+Créditos y Referencias
+Física
 
----
+Mecánica lagrangiana: Goldstein, Mecánica Clásica (3ª ed.)
 
-## Credits & References
+Integración RK4: Press et al., Numerical Recipes in C (2ª ed.)
 
-**Physics**
-- Lagrangian mechanics: Goldstein, *Classical Mechanics* (3rd ed.)
-- RK4 integration: Press et al., *Numerical Recipes in C* (2nd ed.)
-- Double pendulum chaos: Strogatz, *Nonlinear Dynamics and Chaos* (2nd ed.)
+Caos en péndulo doble: Strogatz, Nonlinear Dynamics and Chaos (2ª ed.)
 
-**Color Science**
-- CIELAB/LCH: CIE 15:2004
-- Perceptual uniformity: Sharma, *Digital Color Imaging Handbook*, CRC Press
-- LCH in creative tools: [oklch.com](https://oklch.com)
+Ciencia del Color
 
-**Art & Design Inspiration**
-- Kandinsky, W. — *Concerning the Spiritual in Art* (1912)
-- Vignelli, M. — *The Vignelli Canon* (2010)
-- Bass, S. — Title sequences for *Vertigo* (1958), *Anatomy of a Murder* (1959)
-- Maeda, J. — *The Laws of Simplicity* (2006); *Design by Numbers* (1999)
+CIELAB/LCH: CIE 15:2004
 
-**Technical**
-- [Three.js](https://threejs.org) r177
-- [Zustand](https://zustand-demo.pmnd.rs) v5
-- [Next.js](https://nextjs.org) 16 App Router
+Uniformidad perceptual: Sharma, Digital Color Imaging Handbook, CRC Press
 
----
+LCH en herramientas creativas: oklch.com
 
-*SymFonos — where differential equations become art.*
+Inspiración Artística y de Diseño
+
+Kandinsky, W. — De lo espiritual en el arte (1912)
+
+Vignelli, M. — El canon de Vignelli (2010)
+
+Bass, S. — Secuencias de títulos para Vértigo (1958), Anatomía de un asesinato (1959)
+
+Maeda, J. — Las leyes de la simplicidad (2006); Design by Numbers (1999)
+
+Técnico
+
+Three.js r177
+
+Zustand v5
+
+Next.js 16 App Router
+
