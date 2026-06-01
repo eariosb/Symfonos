@@ -1,0 +1,153 @@
+@import "tailwindcss";
+
+:root {
+  --bg-deep: #050510;
+  --neon-cyan: #00ffff;
+  --neon-magenta: #ff00ff;
+  --neon-white: #ffffff;
+  --neon-glow-cyan: 0 0 8px #00ffff, 0 0 24px #00ffff44;
+  --neon-glow-magenta: 0 0 8px #ff00ff, 0 0 24px #ff00ff44;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg-deep);
+  color: var(--neon-white);
+  font-family: "Inter", system-ui, sans-serif;
+}
+
+/* ── Neon buttons ── */
+.btn-neon {
+  border: 1px solid var(--neon-cyan);
+  color: var(--neon-cyan);
+  background: transparent;
+  padding: 0.35rem 0.9rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  transition: box-shadow 0.15s, background 0.15s;
+  white-space: nowrap;
+}
+.btn-neon:hover {
+  box-shadow: var(--neon-glow-cyan);
+  background: rgba(0, 255, 255, 0.07);
+}
+.btn-neon.active {
+  background: rgba(0, 255, 255, 0.13);
+  box-shadow: var(--neon-glow-cyan);
+}
+.btn-neon-magenta {
+  border-color: var(--neon-magenta);
+  color: var(--neon-magenta);
+}
+.btn-neon-magenta:hover,
+.btn-neon-magenta.active {
+  box-shadow: var(--neon-glow-magenta);
+  background: rgba(255, 0, 255, 0.07);
+}
+.btn-neon:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* ── Range sliders ── */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 1px;
+  outline: none;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--neon-cyan);
+  box-shadow: var(--neon-glow-cyan);
+  cursor: pointer;
+}
+input[type="range"]::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--neon-cyan);
+  box-shadow: var(--neon-glow-cyan);
+  cursor: pointer;
+  border: none;
+}
+
+/* ── Beat indicator ── */
+.beat-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--neon-magenta);
+  opacity: 0.15;
+  transition: opacity 0.08s, box-shadow 0.08s;
+}
+.beat-dot.lit {
+  opacity: 1;
+  box-shadow: var(--neon-glow-magenta);
+}
+
+/* ── Audio level bar ── */
+.level-track {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.level-fill {
+  height: 100%;
+  background: var(--neon-cyan);
+  box-shadow: var(--neon-glow-cyan);
+  transition: width 0.04s linear;
+}
+
+/* ── Tooltip ── */
+.tooltip-wrap { position: relative; display: inline-flex; }
+.tooltip-wrap .tooltip {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(5,5,16,0.95);
+  border: 1px solid rgba(0,255,255,0.2);
+  color: rgba(255,255,255,0.75);
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  padding: 4px 8px;
+  border-radius: 3px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+  z-index: 100;
+}
+.tooltip-wrap:hover .tooltip { opacity: 1; }
+
+/* ── Monochrome mode ── */
+.monochrome-mode canvas {
+  filter: grayscale(1) contrast(1.4);
+}
+
+/* ── Tutorial overlay ── */
+.tutorial-step-enter { opacity: 0; transform: translateY(8px); }
+.tutorial-step-active { opacity: 1; transform: translateY(0); transition: opacity 0.25s, transform 0.25s; }
