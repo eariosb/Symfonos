@@ -405,13 +405,18 @@ export default function PhysicsCanvas({ onMount }: PhysicsCanvasProps) {
       trail2Mat.uniforms.uOpacity.value = p.trailOpacity;
       gridHelper.visible = p.showGrid;
 
+      const materials = gridHelper.material;
+      if (Array.isArray(materials) && materials.length >= 2) {
+        const mat0 = materials[0] as THREE.LineBasicMaterial;
+        const mat1 = materials[1] as THREE.LineBasicMaterial;
       if (p.bgLight) {
-        (gridHelper.material as THREE.LineBasicMaterial[])[0]?.color.set(0xc8b080);
-        (gridHelper.material as THREE.LineBasicMaterial[])[1]?.color.set(0xd8c090);
+        mat0.color.set(0xc8b080);
+        mat1.color.set(0xd8c090);
       } else {
-        (gridHelper.material as THREE.LineBasicMaterial[])[0]?.color.set(0x112233);
-        (gridHelper.material as THREE.LineBasicMaterial[])[1]?.color.set(0x0a1a22);
+        mat0.color.set(0x112233);
+        mat1.color.set(0x0a1a22);
       }
+    }
 
       cartWire.visible = p.wireframeCart;
       bloomPass.strength  = p.bloom.enabled ? p.bloom.strength : 0;
