@@ -1,5 +1,5 @@
 "use client";
-
+// force rebuild - fix gridHelper type
 /**
  * PhysicsCanvas — v4 (Sprint 4 — Trayectorias como Arte)
  * -------------------------------------------------------
