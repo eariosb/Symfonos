@@ -28,7 +28,7 @@ const STEPS: TutorialStep[] = [
     step: 3,
     title: "Estilos Visuales",
     description:
-      "4 presets artísticos inspirados en Kandinsky, Vignelli, Neon y Particle Swarm. Cambia con la tecla P.",
+      "Multiples presets artísticos. Cambia con la tecla P.",
     icon: "🎨",
   },
   {
