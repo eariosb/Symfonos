@@ -53,20 +53,20 @@ const PhysicsCanvas = dynamic(() => import("@/components/PhysicsCanvas"), {
 // Importación lazy de RecordButton (requiere canvas ref)
 const RecordButton = dynamic(() => import("@/components/RecordButton"), { ssr: false });
 
-const FORCE_SCALE    = 12;   // reducido: movimiento más elegante, menos brusco
-const UI_HIDE_DELAY  = 3500;
+const FORCE_SCALE = 12;   // reducido: movimiento más elegante, menos brusco
+const UI_HIDE_DELAY = 3500;
 
 export default function SymFonosPage() {
-  const audio      = useAudioEngine();
-  const phys       = usePhysicsWorker();
-  const store      = useSymfonos();
+  const audio = useAudioEngine();
+  const phys = usePhysicsWorker();
+  const store = useSymfonos();
   const fullscreen = useFullscreen();
-  const adaptive   = useFPSAdaptive();
+  const adaptive = useFPSAdaptive();
 
-  const pageRef    = useRef<HTMLDivElement>(null);
-  const pushFrameRef   = useRef<((d: FrameData) => void) | null>(null);
-  const getCanvasRef   = useRef<(() => HTMLCanvasElement | null) | null>(null);
-  const canvasForRec   = useRef<HTMLCanvasElement | null>(null);
+  const pageRef = useRef<HTMLDivElement>(null);
+  const pushFrameRef = useRef<((d: FrameData) => void) | null>(null);
+  const getCanvasRef = useRef<(() => HTMLCanvasElement | null) | null>(null);
+  const canvasForRec = useRef<HTMLCanvasElement | null>(null);
   const [canvasReady, setCanvasReady] = useState(false);
 
   const [uiVisible, setUiVisible] = useState(true);
@@ -79,10 +79,10 @@ export default function SymFonosPage() {
   adaptiveRef.current = adaptive;
 
   // Refs para los valores de frame — evitan deps de tamaño variable en useEffect
-  const physRef  = useRef(phys);
+  const physRef = useRef(phys);
   const audioRef = useRef(audio);
   const storeRef = useRef(store);
-  physRef.current  = phys;
+  physRef.current = phys;
   audioRef.current = audio;
   storeRef.current = store;
 
@@ -134,16 +134,16 @@ export default function SymFonosPage() {
       // Fuerza shaped: pow(rms,1.6) enfatiza picos reales, evita linealidad plana.
       // La micro-modulación sinusoidal añade "swing" orgánico (como un instrumento analógico).
       const shapedRms = Math.pow(Math.min(1, a.metrics.rms), 1.6);
-      const swingMod  = 0.85 + 0.15 * Math.sin(Date.now() * 0.008);
-      const baseF     = shapedRms * s.sensitivity * FORCE_SCALE * swingMod;
-      const beatF     = a.metrics.isBeat
+      const swingMod = 0.85 + 0.15 * Math.sin(Date.now() * 0.008);
+      const baseF = shapedRms * s.sensitivity * FORCE_SCALE * swingMod;
+      const beatF = a.metrics.isBeat
         ? a.metrics.bassEnergy * s.sensitivity * FORCE_SCALE * 1.8
         : 0;
       p.setForce(baseF + beatF);
 
       // Impulso instantáneo en cada beat: quiebre de trayectoria caótica
       if (a.metrics.isBeat) {
-        const t     = Date.now() * 0.001;
+        const t = Date.now() * 0.001;
         const scale = a.metrics.bassEnergy * s.sensitivity * 1.6;
         p.applyImpulse(
           scale * Math.sin(t * 3.7),
@@ -159,20 +159,21 @@ export default function SymFonosPage() {
         p.applyImpulse(cr(), cr(), cr());
       }
 
-      const state  = s.equation === "spring" ? p.spState : p.dpState;
+      const state = s.equation === "spring" ? p.spState : p.dpState;
       const freqHz = a.metrics.dominantFreq;
-      const freqLog= Math.log10(Math.max(20, Math.min(freqHz, 20000)));
+      const freqLog = Math.log10(Math.max(20, Math.min(freqHz, 20000)));
       const freqNorm = (freqLog - Math.log10(20)) / (Math.log10(20000) - Math.log10(20));
 
       // Señal cinética normalizada
       let velocityNorm = 0;
       if (s.equation === "spring" && state.length >= 6) {
-        const v = Math.sqrt(state[3]**2 + state[4]**2 + state[5]**2);
+        const v = Math.sqrt(state[3]! ** 2 + state[4]! ** 2 + state[5]! ** 2);
         velocityNorm = Math.min(1, v / 8);
       } else if (s.equation === "double" && state.length >= 4) {
-        const v = Math.sqrt(state[2]**2 + state[3]**2);
+        const v = Math.sqrt(state[2]! ** 2 + state[3]! ** 2);
         velocityNorm = Math.min(1, v / 12);
       }
+
 
       const frame: FrameData = {
         state,
@@ -232,14 +233,14 @@ export default function SymFonosPage() {
     return () => { window.removeEventListener("mousemove", h); window.removeEventListener("touchstart", h); };
   }, [resetHideTimer]);
 
-  const preset     = PRESETS[store.preset];
-  const accent     = preset.colors.accent;
-  const accentSec  = preset.colors.accentSecondary;
-  const curState   = store.equation === "spring" ? phys.spState : phys.dpState;
+  const preset = PRESETS[store.preset];
+  const accent = preset.colors.accent;
+  const accentSec = preset.colors.accentSecondary;
+  const curState = store.equation === "spring" ? phys.spState : phys.dpState;
 
   const qualityColor = adaptive.qualityLevel === "high" ? `${accent}55`
     : adaptive.qualityLevel === "medium" ? "rgba(255,180,0,0.6)"
-    : "rgba(255,60,0,0.7)";
+      : "rgba(255,60,0,0.7)";
 
   return (
     <div
@@ -349,8 +350,10 @@ export default function SymFonosPage() {
             <div className="tooltip-wrap">
               <button
                 className="btn-neon"
-                style={{ padding: "0.2rem 0.5rem", fontSize: "0.6rem",
-                         borderColor: "rgba(255,255,255,0.2)", color: "rgba(255,255,255,0.35)" }}
+                style={{
+                  padding: "0.2rem 0.5rem", fontSize: "0.6rem",
+                  borderColor: "rgba(255,255,255,0.2)", color: "rgba(255,255,255,0.35)"
+                }}
                 onClick={() => fullscreen.toggleFullscreen(pageRef.current ?? undefined)}
               >
                 {fullscreen.isFullscreen ? "⊡" : "⊞"} [F]
